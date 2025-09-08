@@ -360,7 +360,12 @@
             });
             
             // Add zone labels
-            const zoneLabels = [
+            const isMobile = window.innerWidth <= 480;
+            const zoneLabels = isMobile ? [
+                { text: 'SATISFIED', x: 60, y: 130, color: '#4CAF50' },
+                { text: 'HUNGRY', x: 140, y: 80, color: '#FFC107' },
+                { text: 'FOGO TIME!', x: 220, y: 130, color: '#f44336' }
+            ] : [
                 { text: 'SATISFIED', x: 100, y: 150, color: '#4CAF50' },
                 { text: 'HUNGRY', x: 180, y: 100, color: '#FFC107' },
                 { text: 'FOGO TIME!', x: 260, y: 150, color: '#f44336' }
