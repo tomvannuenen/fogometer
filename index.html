@@ -36,6 +36,11 @@
             margin-bottom: 10px;
             font-size: 2.5em;
             text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: nowrap;
+            gap: 10px;
         }
 
         .subtitle {
@@ -214,6 +219,14 @@
         }
 
         @media (max-width: 480px) {
+            .container {
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 2em;
+            }
+            
             .gauge-container {
                 width: 320px;
                 height: 200px;
@@ -230,6 +243,10 @@
             
             .gauge-tick {
                 transform-origin: 50% 140px;
+            }
+            
+            .gauge-label {
+                font-size: 10px;
             }
         }
     </style>
@@ -362,9 +379,9 @@
             // Add zone labels
             const isMobile = window.innerWidth <= 480;
             const zoneLabels = isMobile ? [
-                { text: 'SATISFIED', x: 60, y: 130, color: '#4CAF50' },
-                { text: 'HUNGRY', x: 140, y: 80, color: '#FFC107' },
-                { text: 'FOGO TIME!', x: 220, y: 130, color: '#f44336' }
+                { text: 'SATISFIED', x: 50, y: 140, color: '#4CAF50' },
+                { text: 'HUNGRY', x: 130, y: 90, color: '#FFC107' },
+                { text: 'FOGO TIME!', x: 210, y: 140, color: '#f44336' }
             ] : [
                 { text: 'SATISFIED', x: 100, y: 150, color: '#4CAF50' },
                 { text: 'HUNGRY', x: 180, y: 100, color: '#FFC107' },
