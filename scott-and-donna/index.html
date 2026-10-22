@@ -183,6 +183,26 @@
   .status.urgent { animation: blink 1s steps(2) infinite; }
   @keyframes blink { 50% { opacity: .35; } }
 
+  .lyrics {
+    display: none;
+    margin-top: 16px;
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 900;
+    font-size: clamp(22px, 7vw, 30px);
+    letter-spacing: .04em;
+  }
+  .lyrics.on { display: block; }
+  #line {
+    background: linear-gradient(90deg, var(--yellow) 50%, rgba(253, 240, 255, .25) 50%) 100% 0 / 200% 100%;
+    -webkit-background-clip: text;
+            background-clip: text;
+    color: transparent;
+    filter: drop-shadow(0 0 8px rgba(255, 226, 63, .6));
+  }
+  #line.you { background-image: linear-gradient(90deg, var(--cyan) 50%, rgba(253, 240, 255, .25) 50%); filter: drop-shadow(0 0 8px rgba(47, 243, 255, .6)); }
+  #line.sing { animation: wipe var(--dur, 1s) cubic-bezier(.3, 0, .6, 1) forwards; }
+  @keyframes wipe { to { background-position: 0 0; } }
+
   .actions {
     display: flex;
     gap: 12px;
@@ -274,6 +294,8 @@
   </div>
 
   <p class="status" id="status">LOADING…</p>
+
+  <div class="lyrics" id="lyrics"><span id="line"></span></div>
 
   <div class="actions">
     <button class="btn" id="music" type="button">▶ PLAY TAPE</button>
@@ -401,6 +423,7 @@
 
     function play(i, t) {
       const bar = Math.floor(i / 16) % 4, s = i % 16, section = Math.floor(i / 64) % 2;
+      if (s === 0) cue(Math.floor(i / 16), t - ctx.currentTime, 16 * S * .6);
       // Driving octave bass
       tone('sawtooth', hz(ROOTS[bar] + (s % 2 ? 12 : 0)), t, S * .8, .16, 700);
       // Drums
@@ -433,11 +456,25 @@
     };
   })();
 
+  // Karaoke: call and response, one bar each
+  const LYRICS = ['I SAY FOGO!', 'YOU SAY CHAO!'];
+  const lyricsBox = document.getElementById('lyrics'), line = document.getElementById('line');
+  function cue(n, delay, dur) {
+    setTimeout(() => {
+      if (!synth.playing) return;
+      line.textContent = LYRICS[n % 2];
+      line.classList.toggle('you', n % 2 === 1);
+      line.style.setProperty('--dur', dur + 's');
+      line.classList.remove('sing'); void line.offsetWidth; line.classList.add('sing');
+    }, Math.max(0, delay * 1000));
+  }
+
   const musicBtn = document.getElementById('music');
   musicBtn.addEventListener('click', async () => {
     if (synth.playing) synth.stop(); else await synth.start();
     musicBtn.textContent = synth.playing ? '❚❚ STOP TAPE' : '▶ PLAY TAPE';
     musicBtn.classList.toggle('on', synth.playing);
+    lyricsBox.classList.toggle('on', synth.playing);
   });
   setInterval(update, 60000);
 </script>
