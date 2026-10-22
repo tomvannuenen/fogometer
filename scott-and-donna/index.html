@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Scott &amp; Donna's Fogometer</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌴</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Monoton&family=Orbitron:wght@500;900&family=VT323&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #12001f;
+    --pink: #ff2fb4;
+    --cyan: #2ff3ff;
+    --yellow: #ffe23f;
+    --fg: #fdf0ff;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { min-height: 100%; }
+  body {
+    font-family: 'Orbitron', system-ui, sans-serif;
+    color: var(--fg);
+    background: linear-gradient(#0a0014 0%, #2a0845 45%, #6a0f5b 62%, var(--bg) 62%);
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    padding: 24px 16px 40px;
+    overflow-x: hidden;
+    position: relative;
+  }
+
+  /* Sunset sun with stripes */
+  .sun {
+    position: fixed;
+    left: 50%;
+    top: 62vh;
+    width: min(95vw, 680px);
+    aspect-ratio: 1;
+    transform: translate(-50%, -72%);
+    border-radius: 50%;
+    background: linear-gradient(var(--yellow) 10%, #ff7b3f 45%, var(--pink) 80%);
+    -webkit-mask: repeating-linear-gradient(#000 0 14px, transparent 14px 20px) bottom / 100% 45% no-repeat,
+                  linear-gradient(#000, #000) top / 100% 55% no-repeat;
+            mask: repeating-linear-gradient(#000 0 14px, transparent 14px 20px) bottom / 100% 45% no-repeat,
+                  linear-gradient(#000, #000) top / 100% 55% no-repeat;
+    filter: drop-shadow(0 0 40px rgba(255, 47, 180, .6));
+    opacity: .85;
+    pointer-events: none;
+  }
+
+  /* Neon perspective grid floor */
+  .grid {
+    position: fixed;
+    left: -50%; right: -50%;
+    top: 62vh; bottom: -10vh;
+    background:
+      linear-gradient(var(--pink) 2px, transparent 2px) 0 0 / 100% 48px,
+      linear-gradient(90deg, var(--pink) 2px, transparent 2px) 0 0 / 48px 100%;
+    transform: perspective(300px) rotateX(60deg);
+    transform-origin: top;
+    -webkit-mask: linear-gradient(transparent, #000 30%);
+            mask: linear-gradient(transparent, #000 30%);
+    animation: drive 1.2s linear infinite;
+    opacity: .7;
+    pointer-events: none;
+  }
+  @keyframes drive { to { background-position: 0 48px, 0 0; } }
+
+  /* CRT scanlines */
+  body::after {
+    content: '';
+    position: fixed; inset: 0;
+    background: repeating-linear-gradient(rgba(0,0,0,.18) 0 1px, transparent 1px 3px);
+    pointer-events: none;
+    z-index: 5;
+  }
+
+  main {
+    position: relative;
+    z-index: 2;
+    width: 100%;
+    max-width: 440px;
+    text-align: center;
+    padding: 28px 22px 24px;
+    background: rgba(18, 0, 31, .9);
+    border: 2px solid var(--cyan);
+    border-radius: 6px;
+    box-shadow: 0 0 12px var(--cyan), inset 0 0 18px rgba(47, 243, 255, .25);
+    backdrop-filter: blur(4px);
+  }
+
+  .names {
+    font-family: 'VT323', monospace;
+    font-size: 22px;
+    letter-spacing: .2em;
+    color: var(--cyan);
+    text-shadow: 0 0 8px var(--cyan);
+  }
+  h1 {
+    font-family: 'Monoton', cursive;
+    font-weight: 400;
+    font-size: clamp(34px, 11vw, 52px);
+    line-height: 1.1;
+    margin: 6px 0 20px;
+    background: linear-gradient(#fff 0%, #ffd6f3 45%, var(--pink) 50%, #ffe23f 100%);
+    -webkit-background-clip: text;
+            background-clip: text;
+    color: transparent;
+    filter: drop-shadow(0 0 10px rgba(255, 47, 180, .8));
+  }
+
+  .gauge { position: relative; }
+  svg { display: block; width: 100%; height: auto; overflow: visible; }
+  #needle {
+    transform-origin: 150px 150px;
+    transform: rotate(-90deg);
+    transition: transform 1.8s cubic-bezier(.2, .8, .2, 1);
+  }
+  .readout { position: absolute; left: 0; right: 0; bottom: -4px; }
+  .days {
+    font-weight: 900;
+    font-size: clamp(60px, 20vw, 88px);
+    line-height: .9;
+    color: var(--fg);
+    text-shadow: 0 0 6px var(--pink), 0 0 18px var(--pink), 3px 3px 0 var(--cyan);
+    font-variant-numeric: tabular-nums;
+  }
+  .unit {
+    font-family: 'VT323', monospace;
+    font-size: 20px;
+    letter-spacing: .12em;
+    color: var(--cyan);
+    margin-top: 6px;
+  }
+
+  .status {
+    margin-top: 28px;
+    font-family: 'VT323', monospace;
+    font-size: 26px;
+    line-height: 1.15;
+    min-height: 2.3em;
+    display: grid;
+    place-items: center;
+    color: var(--yellow);
+    text-shadow: 0 0 8px currentColor;
+  }
+  .status.urgent { animation: blink 1s steps(2) infinite; }
+  @keyframes blink { 50% { opacity: .35; } }
+
+  footer {
+    margin-top: 18px;
+    padding-top: 12px;
+    border-top: 1px dashed rgba(47, 243, 255, .5);
+    display: flex;
+    justify-content: space-between;
+    font-family: 'VT323', monospace;
+    font-size: 20px;
+    color: var(--cyan);
+  }
+  footer span:last-child { color: var(--fg); }
+
+  @media (max-width: 600px) {
+    body {
+      place-items: start center;
+      padding-top: 24vh;
+      background: linear-gradient(#0a0014 0, #2a0845 20vh, #6a0f5b 34vh, var(--bg) 34vh);
+      background-attachment: fixed;
+    }
+    .sun, .grid { top: 34vh; }
+    .sun { width: 80vw; transform: translate(-50%, -80%); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .grid, .status.urgent { animation: none; }
+    #needle { transition: none; }
+  }
+</style>
+</head>
+<body>
+<div class="sun"></div>
+<div class="grid"></div>
+
+<main>
+  <div class="names">★ SCOTT &amp; DONNA ★</div>
+  <h1>Fogometer</h1>
+
+  <div class="gauge">
+    <svg viewBox="0 0 300 160" aria-hidden="true">
+      <defs>
+        <linearGradient id="neon" x1="0" x2="1">
+          <stop offset="0" stop-color="#2ff3ff"/>
+          <stop offset=".5" stop-color="#b44bff"/>
+          <stop offset="1" stop-color="#ff2fb4"/>
+        </linearGradient>
+        <filter id="glow" filterUnits="userSpaceOnUse" x="-30" y="-30" width="360" height="220">
+          <feGaussianBlur stdDeviation="4" result="b"/>
+          <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+      </defs>
+      <path d="M 20 150 A 130 130 0 0 1 280 150" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="12" stroke-linecap="round"/>
+      <path id="fill" d="M 20 150 A 130 130 0 0 1 280 150" fill="none" stroke="url(#neon)" stroke-width="12" stroke-linecap="round" pathLength="100" stroke-dasharray="0 100" filter="url(#glow)"/>
+      <g id="ticks"></g>
+      <g id="needle" filter="url(#glow)">
+        <line x1="150" y1="52" x2="150" y2="4" stroke="#ffe23f" stroke-width="3.5" stroke-linecap="round"/>
+      </g>
+    </svg>
+    <div class="readout">
+      <div class="days" id="days">0</div>
+      <div class="unit">DAYS SINCE LAST FOGO</div>
+    </div>
+  </div>
+
+  <p class="status" id="status">LOADING…</p>
+
+  <footer><span>LAST FOGO</span><span id="last">—</span></footer>
+</main>
+
+<script>
+  // SCOTT & DONNA'S LAST FOGO DATE — update this after each visit ('YYYY-MM-DD')
+  const LAST_FOGO_DATE = '2026-04-26';
+  const FOGO_CYCLE_DAYS = 180; // about 6 months
+
+  const STAGES = [
+    [1,   '😎 TOTALLY STUFFED. GAG ME WITH A SKEWER.', '#2ff3ff'],
+    [30,  '📼 STILL RIDING THAT MEAT HIGH, DUDE',     '#2ff3ff'],
+    [60,  '🕹️ LIKE, KINDA MISSING THE PICANHA…',      '#7fd8ff'],
+    [90,  '📻 MEAT CRAVINGS TO THE MAX!',             '#b44bff'],
+    [120, '🌴 DREAMING OF ENDLESS MEAT…',             '#e04bff'],
+    [150, '⚡ FOGO IS RADICALLY IMMINENT!',            '#ff2fb4'],
+    [180, '🚨 WHEN I SAY FOGO, YOU SAY…',             '#ff2fb4'],
+    [Infinity, '💀 GAME OVER. INSERT FOGO TO CONTINUE.', '#ff3d3d'],
+  ];
+
+  const ticks = document.getElementById('ticks');
+  for (let d = 0; d <= FOGO_CYCLE_DAYS; d += 30) {
+    const a = Math.PI * (1 - d / FOGO_CYCLE_DAYS);
+    const p = r => [150 + Math.cos(a) * r, 150 - Math.sin(a) * r];
+    const [x1, y1] = p(114), [x2, y2] = p(104);
+    ticks.insertAdjacentHTML('beforeend',
+      `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#2ff3ff" stroke-opacity=".5" stroke-width="2" stroke-linecap="round"/>`);
+  }
+
+  function update() {
+    const [y, m, d] = LAST_FOGO_DATE.split('-').map(Number);
+    const last = new Date(y, m - 1, d);
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const days = Math.max(0, Math.round((today - last) / 864e5));
+    const pct = Math.min(days / FOGO_CYCLE_DAYS, 1);
+
+    document.getElementById('days').textContent = days;
+    document.getElementById('last').textContent =
+      last.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' });
+    document.getElementById('fill').setAttribute('stroke-dasharray', `${pct * 100} 100`);
+    document.getElementById('needle').style.transform = `rotate(${-90 + pct * 180}deg)`;
+
+    const [, msg, color] = STAGES.find(([max]) => days < max);
+    const status = document.getElementById('status');
+    status.textContent = msg;
+    status.style.color = color;
+    status.classList.toggle('urgent', days >= 150);
+  }
+
+  requestAnimationFrame(update);
+  setInterval(update, 60000);
+</script>
+</body>
+</html>
