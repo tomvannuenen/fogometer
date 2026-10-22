@@ -183,6 +183,31 @@
   .status.urgent { animation: blink 1s steps(2) infinite; }
   @keyframes blink { 50% { opacity: .35; } }
 
+  .actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 20px;
+  }
+  .btn {
+    flex: 1;
+    font-family: 'VT323', monospace;
+    font-size: 22px;
+    letter-spacing: .04em;
+    white-space: nowrap;
+    padding: 10px 4px;
+    color: var(--fg);
+    background: rgba(255, 47, 180, .12);
+    border: 2px solid var(--pink);
+    border-radius: 4px;
+    box-shadow: 0 0 10px rgba(255, 47, 180, .6);
+    text-decoration: none;
+    cursor: pointer;
+    transition: background .2s, box-shadow .2s;
+  }
+  .btn:hover, .btn.on { background: rgba(255, 47, 180, .35); box-shadow: 0 0 18px var(--pink); }
+  .btn.alt { border-color: var(--cyan); background: rgba(47, 243, 255, .1); box-shadow: 0 0 10px rgba(47, 243, 255, .6); }
+  .btn.alt:hover { background: rgba(47, 243, 255, .3); box-shadow: 0 0 18px var(--cyan); }
+
   footer {
     margin-top: 18px;
     padding-top: 12px;
@@ -250,6 +275,12 @@
 
   <p class="status" id="status">LOADING…</p>
 
+  <div class="actions">
+    <button class="btn" id="music" type="button">▶ PLAY TAPE</button>
+    <a class="btn alt" target="_blank" rel="noopener"
+       href="https://www.google.com/maps/dir/?api=1&amp;origin=Goleta%2C+CA&amp;destination=Fogo+de+Ch%C3%A3o+Emeryville%2C+CA&amp;travelmode=driving">🚗 ROAD TRIP</a>
+  </div>
+
   <footer><span>LAST FOGO</span><span id="last">—</span></footer>
 </main>
 
@@ -305,6 +336,109 @@
   }
 
   requestAnimationFrame(update);
+
+  // ---- Original synthwave loop, made live with Web Audio (Am–F–C–G) ----
+  const synth = (() => {
+    const BPM = 104, S = 60 / BPM / 4;            // one 16th note
+    const CHORDS = [[57, 60, 64], [53, 57, 60], [48, 52, 55], [55, 59, 62]];
+    const ROOTS = [45, 41, 48, 43];
+    const hz = m => 440 * 2 ** ((m - 69) / 12);
+    let ctx, out, verb, noise, timer, step, next;
+
+    function init() {
+      ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const comp = ctx.createDynamicsCompressor();
+      comp.connect(ctx.destination);
+      out = ctx.createGain(); out.gain.value = .55; out.connect(comp);
+      // Big 80s reverb from a decaying noise impulse
+      verb = ctx.createConvolver();
+      const len = ctx.sampleRate * 2.5, ir = ctx.createBuffer(2, len, ctx.sampleRate);
+      for (let c = 0; c < 2; c++) {
+        const d = ir.getChannelData(c);
+        for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len) ** 3;
+      }
+      verb.buffer = ir;
+      const wet = ctx.createGain(); wet.gain.value = .35;
+      verb.connect(wet).connect(out);
+      noise = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
+      const n = noise.getChannelData(0);
+      for (let i = 0; i < n.length; i++) n[i] = Math.random() * 2 - 1;
+    }
+
+    function env(t, peak, attack, decay, sustain = 0.0001) {
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(peak, t + attack);
+      g.gain.exponentialRampToValueAtTime(Math.max(sustain, 0.0001), t + attack + decay);
+      return g;
+    }
+
+    function tone(type, freq, t, dur, peak, cutoff, send = 0, attack = .005, detune = 0) {
+      const o = ctx.createOscillator(), f = ctx.createBiquadFilter();
+      o.type = type; o.frequency.value = freq; o.detune.value = detune;
+      f.type = 'lowpass'; f.frequency.value = cutoff;
+      const g = env(t, peak, attack, dur);
+      o.connect(f).connect(g).connect(out);
+      if (send) { const s = ctx.createGain(); s.gain.value = send; g.connect(s).connect(verb); }
+      o.start(t); o.stop(t + attack + dur + .05);
+    }
+
+    function hit(t, hp, peak, dur, send = 0) {
+      const src = ctx.createBufferSource(), f = ctx.createBiquadFilter();
+      src.buffer = noise; f.type = 'highpass'; f.frequency.value = hp;
+      const g = env(t, peak, .002, dur);
+      src.connect(f).connect(g).connect(out);
+      if (send) { const s = ctx.createGain(); s.gain.value = send; g.connect(s).connect(verb); }
+      src.start(t); src.stop(t + dur + .05);
+    }
+
+    function kick(t) {
+      const o = ctx.createOscillator(), g = env(t, 1, .002, .35);
+      o.frequency.setValueAtTime(130, t);
+      o.frequency.exponentialRampToValueAtTime(40, t + .15);
+      o.connect(g).connect(out); o.start(t); o.stop(t + .4);
+    }
+
+    function play(i, t) {
+      const bar = Math.floor(i / 16) % 4, s = i % 16, section = Math.floor(i / 64) % 2;
+      // Driving octave bass
+      tone('sawtooth', hz(ROOTS[bar] + (s % 2 ? 12 : 0)), t, S * .8, .16, 700);
+      // Drums
+      if (s % 4 === 0) kick(t);
+      if (s === 4 || s === 12) hit(t, 1200, .45, .22, .8);   // gated-reverb snare
+      if (s % 2 === 0) hit(t, 7000, .07, .04);               // hi-hat
+      // Lush detuned pad
+      if (s === 0) for (const m of CHORDS[bar]) for (const d of [-8, 8])
+        tone('sawtooth', hz(m), t, 16 * S, .035, 1400, .6, .4, d);
+      // Sparkly arpeggio on every other pass
+      if (section && s % 2 === 0) {
+        const notes = CHORDS[bar], pat = [0, 1, 2, 1, 0, 2, 1, 2];
+        tone('square', hz(notes[pat[s / 2]] + 12), t, S * 1.6, .045, 3000, .7);
+      }
+    }
+
+    function tick() {
+      while (next < ctx.currentTime + .12) { play(step++, next); next += S; }
+    }
+
+    return {
+      get playing() { return !!timer; },
+      async start() {
+        if (!ctx) init();
+        await ctx.resume();
+        step = 0; next = ctx.currentTime + .06;
+        timer = setInterval(tick, 25); tick();
+      },
+      stop() { clearInterval(timer); timer = null; ctx.suspend(); },
+    };
+  })();
+
+  const musicBtn = document.getElementById('music');
+  musicBtn.addEventListener('click', async () => {
+    if (synth.playing) synth.stop(); else await synth.start();
+    musicBtn.textContent = synth.playing ? '❚❚ STOP TAPE' : '▶ PLAY TAPE';
+    musicBtn.classList.toggle('on', synth.playing);
+  });
   setInterval(update, 60000);
 </script>
 </body>
