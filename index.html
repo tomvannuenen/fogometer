@@ -1,508 +1,190 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🔥 Fogometer - When's the next Fogo de Chão? 🥩</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Arial', sans-serif;
-            min-height: 100vh;
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
-
-        .container {
-            background: linear-gradient(145deg, #2c2c2c, #1a1a1a);
-            border-radius: 30px;
-            padding: 40px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1);
-            max-width: 600px;
-            width: 100%;
-            text-align: center;
-        }
-
-        h1 {
-            color: #fff;
-            margin-bottom: 10px;
-            font-size: 2.5em;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-wrap: nowrap;
-            gap: 10px;
-        }
-
-        .subtitle {
-            color: #aaa;
-            margin-bottom: 30px;
-            font-size: 1.1em;
-        }
-
-        .gauge-container {
-            position: relative;
-            width: 400px;
-            height: 250px;
-            margin: 30px auto;
-            background: radial-gradient(ellipse at center, #333 0%, #1a1a1a 100%);
-            border-radius: 200px 200px 20px 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5), inset 0 -5px 15px rgba(0,0,0,0.5);
-            border: 8px solid #444;
-        }
-
-        .gauge-face {
-            position: absolute;
-            width: 380px;
-            height: 240px;
-            top: 5px;
-            left: 10px;
-        }
-
-        .gauge-tick {
-            position: absolute;
-            width: 2px;
-            height: 15px;
-            background: #666;
-            left: 50%;
-            top: 10px;
-            transform-origin: 50% 180px;
-        }
-
-        .gauge-tick.major {
-            width: 3px;
-            height: 20px;
-            background: #888;
-        }
-
-        .gauge-tick.danger {
-            background: #ff4444;
-        }
-
-        .gauge-label {
-            position: absolute;
-            color: #aaa;
-            font-size: 12px;
-            font-weight: bold;
-            transform-origin: center;
-        }
-
-        .gauge-center {
-            position: absolute;
-            width: 30px;
-            height: 30px;
-            background: radial-gradient(circle, #666, #333);
-            border-radius: 50%;
-            left: 50%;
-            bottom: 10px;
-            transform: translateX(-50%);
-            box-shadow: 0 3px 10px rgba(0,0,0,0.5);
-            z-index: 10;
-        }
-
-        .gauge-needle {
-            position: absolute;
-            width: 4px;
-            height: 180px;
-            background: linear-gradient(to bottom, #ff3333 0%, #ff6666 50%, #333 50%);
-            left: 50%;
-            bottom: 10px;
-            transform-origin: 50% 100%;
-            transform: translateX(-50%) rotate(-90deg);
-            transition: transform 2s cubic-bezier(0.4, 0, 0.2, 1);
-            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
-            z-index: 9;
-        }
-
-        .gauge-needle::before {
-            content: '';
-            position: absolute;
-            width: 0;
-            height: 0;
-            border-left: 10px solid transparent;
-            border-right: 10px solid transparent;
-            border-bottom: 30px solid #ff3333;
-            top: -15px;
-            left: 50%;
-            transform: translateX(-50%);
-        }
-
-        .gauge-canvas {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            left: 0;
-            top: 0;
-        }
-
-        .status-message {
-            font-size: 1.6em;
-            font-weight: bold;
-            margin: 30px 0;
-            min-height: 60px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #fff;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
-        }
-
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-        }
-
-        @keyframes alarm {
-            0%, 100% { transform: scale(1) rotate(0deg); }
-            25% { transform: scale(1.1) rotate(-3deg); }
-            75% { transform: scale(1.1) rotate(3deg); }
-        }
-
-        .days-counter {
-            background: linear-gradient(145deg, #222, #111);
-            border-radius: 15px;
-            padding: 15px;
-            margin: 20px 0;
-            box-shadow: inset 0 2px 5px rgba(0,0,0,0.5);
-        }
-
-        .days-number {
-            font-size: 3em;
-            font-weight: bold;
-            color: #ff6666;
-            text-shadow: 0 0 10px rgba(255,102,102,0.5);
-        }
-
-        .days-label {
-            color: #888;
-            margin-top: 5px;
-        }
-
-        .last-fogo {
-            margin-top: 20px;
-            padding: 15px;
-            background: linear-gradient(145deg, #222, #111);
-            border-radius: 10px;
-            color: #888;
-            box-shadow: inset 0 2px 5px rgba(0,0,0,0.5);
-        }
-
-
-        .fire-emoji {
-            animation: fire 1s infinite;
-            display: inline-block;
-        }
-
-        @keyframes fire {
-            0%, 100% { transform: scale(1) rotate(0deg); }
-            25% { transform: scale(1.1) rotate(-5deg); }
-            75% { transform: scale(1.1) rotate(5deg); }
-        }
-
-        .meat-emoji {
-            animation: bounce 2s infinite;
-            display: inline-block;
-        }
-
-        @keyframes bounce {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-10px); }
-        }
-
-        @media (max-width: 480px) {
-            .container {
-                padding: 20px;
-            }
-            
-            h1 {
-                font-size: 2em;
-            }
-            
-            .gauge-container {
-                width: 320px;
-                height: 200px;
-            }
-            
-            .gauge-face {
-                width: 300px;
-                height: 190px;
-            }
-            
-            .gauge-needle {
-                height: 140px;
-            }
-            
-            .gauge-tick {
-                transform-origin: 50% 140px;
-            }
-            
-            .gauge-label {
-                font-size: 10px;
-            }
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fogometer</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔥</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0b0b0d;
+    --fg: #f4f1ec;
+    --muted: #7d7a75;
+    --track: #1d1c1f;
+    --accent: #ff5a1f;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    font-family: 'Space Grotesk', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--fg);
+    display: grid;
+    place-items: center;
+    padding: 24px 16px;
+    overflow-x: hidden;
+  }
+  body::before {
+    content: '';
+    position: fixed;
+    inset: auto 0 -40vh 0;
+    height: 80vh;
+    background: radial-gradient(ellipse at center, var(--glow, rgba(255,90,31,.18)), transparent 65%);
+    pointer-events: none;
+    transition: background 1s;
+  }
+  main {
+    position: relative;
+    width: 100%;
+    max-width: 420px;
+    text-align: center;
+  }
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-size: 13px;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 40px;
+  }
+  header b { color: var(--fg); font-weight: 700; letter-spacing: .1em; }
+  .gauge { position: relative; width: 100%; }
+  svg { display: block; width: 100%; height: auto; overflow: visible; }
+  .readout {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+  }
+  .days {
+    font-size: clamp(64px, 22vw, 96px);
+    font-weight: 700;
+    line-height: .9;
+    letter-spacing: -.04em;
+    font-variant-numeric: tabular-nums;
+  }
+  .unit {
+    margin-top: 8px;
+    font-size: 12px;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .status {
+    margin: 40px 0 0;
+    font-size: 20px;
+    font-weight: 500;
+    min-height: 1.4em;
+    color: var(--status, var(--fg));
+  }
+  .status.urgent { animation: pulse .8s ease-in-out infinite; }
+  footer {
+    margin-top: 48px;
+    padding-top: 16px;
+    border-top: 1px solid var(--track);
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    color: var(--muted);
+  }
+  footer span:last-child { color: var(--fg); }
+  #needle {
+    transform-origin: 150px 150px;
+    transform: rotate(-90deg);
+    transition: transform 1.6s cubic-bezier(.2, .8, .2, 1);
+  }
+  @keyframes pulse { 50% { opacity: .55; } }
+  @media (prefers-reduced-motion: reduce) {
+    #needle { transition: none; }
+    .status.urgent { animation: none; }
+  }
+</style>
 </head>
 <body>
-    <div class="container">
-        <h1><span class="fire-emoji">🔥</span> Fogometer <span class="meat-emoji">🥩</span></h1>
-        <p class="subtitle">A Highly Scientific Approach</p>
-        
-        <div class="gauge-container">
-            <canvas class="gauge-canvas" id="gaugeCanvas" width="400" height="250"></canvas>
-            <div class="gauge-face" id="gaugeFace"></div>
-            <div class="gauge-needle" id="gaugeNeedle"></div>
-            <div class="gauge-center"></div>
-        </div>
+<main>
+  <header><b>🔥 Fogometer</b><span>Highly scientific</span></header>
 
-        <div class="days-counter">
-            <div class="days-number" id="daysCount">0</div>
-            <div class="days-label">days since last Fogo</div>
-        </div>
-
-        <div class="status-message" id="statusMessage">
-            Calculating Fogo status...
-        </div>
-
-        <div class="last-fogo">
-            <strong>Last Fogo:</strong> <span id="lastFogoDate">Never</span>
-        </div>
+  <div class="gauge">
+    <svg viewBox="0 0 300 160" aria-hidden="true">
+      <defs>
+        <linearGradient id="heat" x1="0" x2="1" y1="0" y2="0">
+          <stop offset="0" stop-color="#3ddc84"/>
+          <stop offset=".45" stop-color="#ffc53d"/>
+          <stop offset=".75" stop-color="#ff7a1f"/>
+          <stop offset="1" stop-color="#ff2d3d"/>
+        </linearGradient>
+      </defs>
+      <path d="M 20 150 A 130 130 0 0 1 280 150" fill="none" stroke="var(--track)" stroke-width="14" stroke-linecap="round"/>
+      <path id="fill" d="M 20 150 A 130 130 0 0 1 280 150" fill="none" stroke="url(#heat)" stroke-width="14" stroke-linecap="round" pathLength="100" stroke-dasharray="0 100"/>
+      <g id="ticks"></g>
+      <g id="needle">
+        <line x1="150" y1="52" x2="150" y2="6" stroke="var(--fg)" stroke-width="3" stroke-linecap="round"/>
+      </g>
+    </svg>
+    <div class="readout">
+      <div class="days" id="days">0</div>
+      <div class="unit">days since last Fogo</div>
     </div>
+  </div>
 
-    <script>
-        const FOGO_CYCLE_DAYS = 180; // About 6 months
-        
-        // SHARED LAST FOGO DATE - Update this when you go to Fogo!
-        // Format: 'YYYY-MM-DD'
-        const LAST_FOGO_DATE = '2026-04-26';  // <-- UPDATE THIS DATE AFTER EACH FOGO VISIT
-        
-        // Draw colored zones on canvas
-        function drawGaugeZones() {
-            const canvas = document.getElementById('gaugeCanvas');
-            const ctx = canvas.getContext('2d');
-            const centerX = canvas.width / 2;
-            const centerY = canvas.height - 10;
-            const outerRadius = 180;
-            const innerRadius = 25;
-            
-            // Clear canvas
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            // Save context
-            ctx.save();
-            
-            // Create gradient for each zone
-            function drawSector(startDays, endDays, color) {
-                // Convert days to angles (0 days = -90deg, 180 days = 90deg)
-                const startAngle = Math.PI + (Math.PI * startDays / 180);
-                const endAngle = Math.PI + (Math.PI * endDays / 180);
-                
-                ctx.beginPath();
-                ctx.arc(centerX, centerY, outerRadius, startAngle, endAngle, false);
-                ctx.arc(centerX, centerY, innerRadius, endAngle, startAngle, true);
-                ctx.closePath();
-                ctx.fillStyle = color;
-                ctx.fill();
-                ctx.strokeStyle = 'rgba(0,0,0,0.1)';
-                ctx.lineWidth = 1;
-                ctx.stroke();
-            }
-            
-            // Draw zones based on day ranges
-            drawSector(0, 60, 'rgba(76, 175, 80, 0.25)');      // Green: 0-60 days
-            drawSector(60, 120, 'rgba(255, 193, 7, 0.25)');    // Yellow: 60-120 days
-            drawSector(120, 150, 'rgba(255, 152, 0, 0.25)');   // Orange: 120-150 days
-            drawSector(150, 180, 'rgba(244, 67, 54, 0.25)');   // Red: 150-180 days
-            
-            // Restore context
-            ctx.restore();
-        }
-        
-        // Create gauge ticks and labels
-        function createGauge() {
-            const gaugeFace = document.getElementById('gaugeFace');
-            
-            // Draw zones first
-            drawGaugeZones();
-            
-            // Create ticks
-            for (let i = 0; i <= 180; i += 10) {
-                const tick = document.createElement('div');
-                tick.className = 'gauge-tick';
-                
-                if (i % 30 === 0) {
-                    tick.className += ' major';
-                }
-                
-                if (i >= 150) {
-                    tick.className += ' danger';
-                }
-                
-                const angle = -90 + (i / 180) * 180;
-                tick.style.transform = `translateX(-50%) rotate(${angle}deg)`;
-                gaugeFace.appendChild(tick);
-            }
-            
-            // Create labels
-            const isMobile = window.innerWidth <= 480;
-            const labels = isMobile ? [
-                { text: '0', angle: -90, x: 20, y: 140 },
-                { text: '30', angle: -60, x: 40, y: 95 },
-                { text: '60', angle: -30, x: 70, y: 55 },
-                { text: '90', angle: 0, x: 140, y: 25 },
-                { text: '120', angle: 30, x: 210, y: 55 },
-                { text: '150', angle: 60, x: 240, y: 95 },
-                { text: '180', angle: 90, x: 260, y: 140 }
-            ] : [
-                { text: '0', angle: -90, x: 40, y: 180 },
-                { text: '30', angle: -60, x: 60, y: 120 },
-                { text: '60', angle: -30, x: 90, y: 70 },
-                { text: '90', angle: 0, x: 180, y: 40 },
-                { text: '120', angle: 30, x: 270, y: 70 },
-                { text: '150', angle: 60, x: 300, y: 120 },
-                { text: '180', angle: 90, x: 320, y: 180 }
-            ];
-            
-            labels.forEach(label => {
-                const labelEl = document.createElement('div');
-                labelEl.className = 'gauge-label';
-                labelEl.textContent = label.text;
-                labelEl.style.left = label.x + 'px';
-                labelEl.style.top = label.y + 'px';
-                
-                if (parseInt(label.text) >= 150) {
-                    labelEl.style.color = '#ff6666';
-                }
-                
-                gaugeFace.appendChild(labelEl);
-            });
-            
-            // Add zone labels
-            const zoneLabels = isMobile ? [
-                { text: 'SATISFIED', x: 40, y: 140, color: '#4CAF50' },
-                { text: 'HUNGRY', x: 120, y: 90, color: '#FFC107' },
-                { text: 'FOGO TIME!', x: 185, y: 140, color: '#f44336' }
-            ] : [
-                { text: 'SATISFIED', x: 100, y: 150, color: '#4CAF50' },
-                { text: 'HUNGRY', x: 180, y: 100, color: '#FFC107' },
-                { text: 'FOGO TIME!', x: 260, y: 150, color: '#f44336' }
-            ];
-            
-            zoneLabels.forEach(label => {
-                const labelEl = document.createElement('div');
-                labelEl.className = 'gauge-label';
-                labelEl.textContent = label.text;
-                labelEl.style.left = label.x + 'px';
-                labelEl.style.top = label.y + 'px';
-                labelEl.style.color = label.color;
-                labelEl.style.fontSize = '10px';
-                gaugeFace.appendChild(labelEl);
-            });
-        }
-        
-        // Get the shared last Fogo date
-        function getLastFogoDate() {
-            return new Date(LAST_FOGO_DATE);
-        }
+  <p class="status" id="status">Calculating…</p>
 
+  <footer><span>Last Fogo</span><span id="last">—</span></footer>
+</main>
 
-        function updateFogometer() {
-            const lastFogo = getLastFogoDate();
-            const today = new Date();
-            const daysSince = Math.floor((today - lastFogo) / (1000 * 60 * 60 * 24));
-            
-            // Update days counter
-            document.getElementById('daysCount').textContent = daysSince;
-            
-            // Update last Fogo date display
-            document.getElementById('lastFogoDate').textContent = lastFogo.toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric'
-            });
-            
-            // Calculate needle angle (from -90 to +90 degrees)
-            const cappedDays = Math.min(daysSince, FOGO_CYCLE_DAYS);
-            const angle = -90 + (cappedDays / FOGO_CYCLE_DAYS) * 180;
-            
-            // Update needle position
-            const needle = document.getElementById('gaugeNeedle');
-            needle.style.transform = `translateX(-50%) rotate(${angle}deg)`;
-            
-            // Add wobble animation when in danger zone
-            if (daysSince >= 150) {
-                needle.style.animation = 'wobble 0.5s infinite';
-            } else {
-                needle.style.animation = '';
-            }
-            
-            // Update status message
-            const statusMessage = document.getElementById('statusMessage');
-            let message;
-            let messageColor;
-            
-            if (daysSince === 0) {
-                message = '😴 Decompressing from previous Fogo...';
-                messageColor = '#4CAF50';
-            } else if (daysSince < 30) {
-                message = '😊 Still satisfied from last Fogo';
-                messageColor = '#4CAF50';
-            } else if (daysSince < 60) {
-                message = '🤔 Starting to miss those meats...';
-                messageColor = '#8BC34A';
-            } else if (daysSince < 90) {
-                message = '😋 Meat cravings intensifying!';
-                messageColor = '#FFC107';
-            } else if (daysSince < 120) {
-                message = '🤤 Dreams of endless meat...';
-                messageColor = '#FF9800';
-            } else if (daysSince < 150) {
-                message = '⚠️ Fogo imminent!';
-                messageColor = '#FF5722';
-            } else if (daysSince < 180) {
-                message = '🚨 When I say FOGO, you say...';
-                messageColor = '#f44336';
-                statusMessage.style.animation = 'pulse 0.5s infinite';
-            } else {
-                message = '💀 EMERGENCY! MUST. HAVE. FOGO. NOW!';
-                messageColor = '#d32f2f';
-                statusMessage.style.animation = 'alarm 0.3s infinite';
-            }
-            
-            statusMessage.textContent = message;
-            statusMessage.style.color = messageColor;
-        }
+<script>
+  // SHARED LAST FOGO DATE — update this after each visit ('YYYY-MM-DD')
+  const LAST_FOGO_DATE = '2026-04-26';
+  const FOGO_CYCLE_DAYS = 180; // about 6 months
 
-        // Add additional animations
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes wobble {
-                0%, 100% { transform: translateX(-50%) rotate(${90}deg); }
-                25% { transform: translateX(-50%) rotate(${88}deg); }
-                75% { transform: translateX(-50%) rotate(${92}deg); }
-            }
-            @keyframes celebrate {
-                0% { transform: scale(1) rotate(0deg); }
-                50% { transform: scale(1.05) rotate(2deg); }
-                100% { transform: scale(1) rotate(0deg); }
-            }
-        `;
-        document.head.appendChild(style);
+  const STAGES = [
+    [1,   '😴 Decompressing from previous Fogo…', '#3ddc84'],
+    [30,  '😊 Still satisfied from last Fogo',     '#3ddc84'],
+    [60,  '🤔 Starting to miss those meats…',      '#9be05a'],
+    [90,  '😋 Meat cravings intensifying!',        '#ffc53d'],
+    [120, '🤤 Dreams of endless meat…',            '#ff9f1f'],
+    [150, '⚠️ Fogo imminent!',                     '#ff7a1f'],
+    [180, '🚨 When I say FOGO, you say…',          '#ff2d3d'],
+    [Infinity, '💀 EMERGENCY. MUST. HAVE. FOGO. NOW.', '#ff2d3d'],
+  ];
 
-        // Initialize gauge
-        createGauge();
-        
-        // Initialize and update every second for smooth animations
-        updateFogometer();
-        setInterval(updateFogometer, 1000);
-    </script>
+  // Tick marks every 30 days
+  const ticks = document.getElementById('ticks');
+  for (let d = 0; d <= FOGO_CYCLE_DAYS; d += 30) {
+    const a = Math.PI * (1 - d / FOGO_CYCLE_DAYS);
+    const x = 150 + Math.cos(a) * 112, y = 150 - Math.sin(a) * 112;
+    const x2 = 150 + Math.cos(a) * 104, y2 = 150 - Math.sin(a) * 104;
+    ticks.insertAdjacentHTML('beforeend',
+      `<line x1="${x}" y1="${y}" x2="${x2}" y2="${y2}" stroke="#3a383c" stroke-width="2" stroke-linecap="round"/>`);
+  }
+
+  function update() {
+    const [y, m, d] = LAST_FOGO_DATE.split('-').map(Number);
+    const last = new Date(y, m - 1, d);
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const days = Math.max(0, Math.round((today - last) / 864e5));
+    const pct = Math.min(days / FOGO_CYCLE_DAYS, 1);
+
+    document.getElementById('days').textContent = days;
+    document.getElementById('last').textContent =
+      last.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    document.getElementById('fill').setAttribute('stroke-dasharray', `${pct * 100} 100`);
+    document.getElementById('needle').style.transform = `rotate(${-90 + pct * 180}deg)`;
+
+    const [, msg, color] = STAGES.find(([max]) => days < max);
+    const status = document.getElementById('status');
+    status.textContent = msg;
+    status.classList.toggle('urgent', days >= 150);
+    document.documentElement.style.setProperty('--status', color);
+    document.body.style.setProperty('--glow', color + '2e');
+  }
+
+  requestAnimationFrame(update);
+  setInterval(update, 60000);
+</script>
 </body>
 </html>
