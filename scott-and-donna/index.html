@@ -190,8 +190,9 @@
       <defs>
         <linearGradient id="neon" x1="0" x2="1">
           <stop offset="0" stop-color="#2ff3ff"/>
-          <stop offset=".5" stop-color="#b44bff"/>
-          <stop offset="1" stop-color="#ff2fb4"/>
+          <stop offset=".45" stop-color="#b44bff"/>
+          <stop offset=".75" stop-color="#ff2fb4"/>
+          <stop offset="1" stop-color="#ff2d3d"/>
         </linearGradient>
         <filter id="glow" filterUnits="userSpaceOnUse" x="-30" y="-30" width="360" height="220">
           <feGaussianBlur stdDeviation="4" result="b"/>
@@ -217,24 +218,25 @@
 </main>
 
 <script>
-  // SCOTT & DONNA'S LAST FOGO DATE — update this after each visit ('YYYY-MM-DD')
-  const LAST_FOGO_DATE = '2026-04-26';
-  const FOGO_CYCLE_DAYS = 180; // about 6 months
+  // SCOTT & DONNA'S LAST FOGO DATE — set to 'YYYY-MM-DD' after their next visit.
+  // null = way too long ago (gauge pegged in the red).
+  const LAST_FOGO_DATE = null;
+  const FOGO_CYCLE_DAYS = 365; // yearly turnaround
 
   const STAGES = [
     [1,   '😎 TOTALLY STUFFED. GAG ME WITH A SKEWER.', '#2ff3ff'],
-    [30,  '📼 STILL RIDING THAT MEAT HIGH, DUDE',     '#2ff3ff'],
-    [60,  '🕹️ LIKE, KINDA MISSING THE PICANHA…',      '#7fd8ff'],
-    [90,  '📻 MEAT CRAVINGS TO THE MAX!',             '#b44bff'],
-    [120, '🌴 DREAMING OF ENDLESS MEAT…',             '#e04bff'],
-    [150, '⚡ FOGO IS RADICALLY IMMINENT!',            '#ff2fb4'],
-    [180, '🚨 WHEN I SAY FOGO, YOU SAY…',             '#ff2fb4'],
+    [60,  '📼 STILL RIDING THAT MEAT HIGH, DUDE',     '#2ff3ff'],
+    [120, '🕹️ LIKE, KINDA MISSING THE PICANHA…',      '#7fd8ff'],
+    [180, '📻 MEAT CRAVINGS TO THE MAX!',             '#b44bff'],
+    [240, '🌴 DREAMING OF ENDLESS MEAT…',             '#e04bff'],
+    [300, '⚡ FOGO IS RADICALLY IMMINENT!',            '#ff2fb4'],
+    [365, '🚨 WHEN I SAY FOGO, YOU SAY…',             '#ff2fb4'],
     [Infinity, '💀 GAME OVER. INSERT FOGO TO CONTINUE.', '#ff3d3d'],
   ];
 
   const ticks = document.getElementById('ticks');
-  for (let d = 0; d <= FOGO_CYCLE_DAYS; d += 30) {
-    const a = Math.PI * (1 - d / FOGO_CYCLE_DAYS);
+  for (let i = 0; i <= 6; i++) { // a tick every ~2 months
+    const a = Math.PI * (1 - i / 6);
     const p = r => [150 + Math.cos(a) * r, 150 - Math.sin(a) * r];
     const [x1, y1] = p(114), [x2, y2] = p(104);
     ticks.insertAdjacentHTML('beforeend',
@@ -242,24 +244,27 @@
   }
 
   function update() {
-    const [y, m, d] = LAST_FOGO_DATE.split('-').map(Number);
-    const last = new Date(y, m - 1, d);
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const days = Math.max(0, Math.round((today - last) / 864e5));
+    let days = Infinity, lastText = 'WAY TOO LONG AGO';
+    if (LAST_FOGO_DATE) {
+      const [y, m, d] = LAST_FOGO_DATE.split('-').map(Number);
+      const last = new Date(y, m - 1, d);
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      days = Math.max(0, Math.round((today - last) / 864e5));
+      lastText = last.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' });
+    }
     const pct = Math.min(days / FOGO_CYCLE_DAYS, 1);
 
-    document.getElementById('days').textContent = days;
-    document.getElementById('last').textContent =
-      last.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' });
+    document.getElementById('days').textContent = days === Infinity ? '???' : days;
+    document.getElementById('last').textContent = lastText;
     document.getElementById('fill').setAttribute('stroke-dasharray', `${pct * 100} 100`);
     document.getElementById('needle').style.transform = `rotate(${-90 + pct * 180}deg)`;
 
-    const [, msg, color] = STAGES.find(([max]) => days < max);
+    const [, msg, color] = STAGES.find(([max]) => days < max) || STAGES.at(-1);
     const status = document.getElementById('status');
     status.textContent = msg;
     status.style.color = color;
-    status.classList.toggle('urgent', days >= 150);
+    status.classList.toggle('urgent', days >= 300);
   }
 
   requestAnimationFrame(update);
