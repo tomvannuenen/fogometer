@@ -111,6 +111,41 @@
   }
 
   .gauge { position: relative; }
+
+  /* About to blow: shake, throb, glow */
+  .gauge::before {
+    content: '';
+    position: absolute;
+    inset: 10% 5% -5%;
+    border-radius: 50%;
+    background: radial-gradient(rgba(255, 45, 61, .85), transparent 62%);
+    opacity: 0;
+    pointer-events: none;
+  }
+  .gauge.critical { animation: shake .18s linear infinite; }
+  .gauge.critical::before { animation: throb .6s ease-in-out infinite; }
+  .gauge.critical #fill { animation: swell .6s ease-in-out infinite; }
+  .gauge.critical .days { animation: pound .6s ease-in-out infinite; }
+  @keyframes shake {
+    0%   { transform: translate(0, 0) rotate(0); }
+    20%  { transform: translate(-2px, 1px) rotate(-.6deg); }
+    40%  { transform: translate(2px, -1px) rotate(.6deg); }
+    60%  { transform: translate(-1px, -2px) rotate(-.3deg); }
+    80%  { transform: translate(1px, 2px) rotate(.4deg); }
+    100% { transform: translate(0, 0) rotate(0); }
+  }
+  main:has(.gauge.critical) { animation: alarm .6s ease-in-out infinite; }
+  @keyframes alarm {
+    50% { border-color: #ff2d3d; box-shadow: 0 0 28px #ff2d3d, inset 0 0 30px rgba(255, 45, 61, .35); }
+  }
+  @keyframes throb { 50% { opacity: 1; transform: scale(1.08); } }
+  @keyframes swell { 50% { stroke-width: 17; } }
+  @keyframes pound {
+    0%, 100% { transform: scale(1); }
+    15% { transform: scale(1.12); color: #ffd0d4; }
+    30% { transform: scale(1); }
+    45% { transform: scale(1.06); }
+  }
   svg { display: block; width: 100%; height: auto; overflow: visible; }
   #needle {
     transform-origin: 150px 150px;
@@ -172,7 +207,8 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .grid, .status.urgent { animation: none; }
+    .grid, .status.urgent, .gauge.critical, .gauge.critical::before,
+    .gauge.critical #fill, .gauge.critical .days, main { animation: none !important; }
     #needle { transition: none; }
   }
 </style>
@@ -265,6 +301,7 @@
     status.textContent = msg;
     status.style.color = color;
     status.classList.toggle('urgent', days >= 300);
+    document.querySelector('.gauge').classList.toggle('critical', days >= 300);
   }
 
   requestAnimationFrame(update);
